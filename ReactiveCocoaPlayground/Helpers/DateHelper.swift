@@ -1,11 +1,3 @@
-//
-//  DateHelper.swift
-//  9Gag
-//
-//  Created by Brian Chung on 31/1/2018.
-//  Copyright © 2018 9GAG. All rights reserved.
-//
-
 import Foundation
 
 final class DateHelper {

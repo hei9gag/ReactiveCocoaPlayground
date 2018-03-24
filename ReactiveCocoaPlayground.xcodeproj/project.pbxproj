@@ -50,7 +50,6 @@
 		A7A28BA42065F100002787FA /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		A7A28BA62065F271002787FA /* DateHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateHelper.swift; sourceTree = "<group>"; };
 		A7A28BB42065FC5B002787FA /* ReactiveHttpClientTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactiveHttpClientTest.swift; sourceTree = "<group>"; };
-		A7A28BB620662B1C002787FA /* ReactiveHttpClientSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReactiveHttpClientSpec.swift; sourceTree = "<group>"; };
 		D0DB2F68FB166E4A5491D292 /* Pods_ReactiveCocoaPlayground.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ReactiveCocoaPlayground.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E72A541C536FDBA24F985ADA /* Pods_ReactiveCocoaPlaygroundTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ReactiveCocoaPlaygroundTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -113,7 +112,6 @@
 		A7A28B872065DD54002787FA /* ReactiveCocoaPlaygroundTests */ = {
 			isa = PBXGroup;
 			children = (
-				A7A28BB620662B1C002787FA /* ReactiveHttpClientSpec.swift */,
 				A7A28B8A2065DD54002787FA /* Info.plist */,
 				A7A28BB42065FC5B002787FA /* ReactiveHttpClientTest.swift */,
 			);
