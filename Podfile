@@ -7,6 +7,7 @@ use_frameworks!
 target 'ReactiveCocoaPlayground' do
   
 	pod 'Alamofire', '~> 4.7'
+	pod 'AlamofireNetworkActivityIndicator', '~> 2.2'
 	pod 'ReactiveCocoa', '~> 7.0'
 
   	target 'ReactiveCocoaPlaygroundTests' do
