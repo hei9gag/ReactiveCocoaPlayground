@@ -38,7 +38,7 @@ class ReactiveHttpClientTest: XCTestCase {
 					if case .invalidStatusCode(let code) = responseError.errorType {
 						expect(code) == 404
 					} else {
-						fail("Response status code is not 404")
+						fail("Expect the response code returns 404")
 					}
 				}
 				done()
@@ -55,7 +55,7 @@ class ReactiveHttpClientTest: XCTestCase {
 					if case .invalidStatusCode(let code) = responseError.errorType {
 						expect(code) == 500
 					} else {
-						fail("Response status code is not 500")
+						fail("Expect the response code returns 500")
 					}
 				}
 				done()
