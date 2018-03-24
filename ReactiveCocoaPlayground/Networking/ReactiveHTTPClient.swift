@@ -3,7 +3,6 @@ import UIKit
 import Alamofire
 import AlamofireNetworkActivityIndicator
 import ReactiveSwift
-import Result
 
 struct NetworkRequestTimeOut {
 	public static let slow: TimeInterval = 60.0
@@ -43,7 +42,8 @@ class ReactiveHTTPClient {
 				parameters: parameters,
 				encoding: parameterEncoding ?? (method == .get ? URLEncoding.queryString : JSONEncoding.default),
 				headers: headers)
-				.responseJSON(queue: DispatchQueue.global(qos: .background)) { response in
+				.validate(statusCode: 200..<300)
+				.responseData(queue: DispatchQueue.global(qos: .background)) { response in
 					self.handleDataResponse(response, with: observer)
 				}
 				.responseString { response in
@@ -63,7 +63,7 @@ class ReactiveHTTPClient {
 		case .failure(let error):
 			let responseError = ResponseError(error: error, url: response.request?.url)
 			observer.send(error: responseError)			
-		case .success(let result):
+		case .success(let result):			
 			let headers = response.response?.allHeaderFields as? [String: String] ?? [:]
 			observer.send(value: resultTansform(result, headers) as! Result)
 			observer.sendCompleted()

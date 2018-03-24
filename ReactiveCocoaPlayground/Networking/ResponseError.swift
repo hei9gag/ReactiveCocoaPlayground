@@ -5,49 +5,25 @@ import Alamofire
 struct ResponseError: Error {
 
 	enum ResponseErrorType {
-		case noNetworkConnection(NSError)
-		case connectionTimeout(NSError)
-		case httpError(statusCode:Int)
-		case notJSON(rawResponse:HTTPURLResponse?)
-		case parseJSONError(decodingError: DecodingError)
-		case unexpectedError(message:String?, error:Error?)
+		case invalidUrl(AFError)
+		case responseValidationFailed(AFError)
+		case parameterEncodingFailed(AFError)
+		case multipartEncodingFailed(AFError)
+		case responseSerializationFailed(AFError)
+		case invalidStatusCode(Int)
+		case urlError(URLError)
+		case unknownError(NSError)
 	}
 
 	let errorType: ResponseErrorType
-	let url: URL?
-
-	init(errorType: ResponseErrorType, url: URL?) {
-		self.errorType = errorType
-		self.url = url
-	}
 
 	init(error: Error, url: URL?) {
-		self = ResponseError.from(generalError: error, url: url)
+		self = ResponseError.handleAfErrorResponse(error: error, url: url)
 	}
 
-    /// Map gerenic error to API ResponseError which return by Alamorefire failure response
-    static func from(generalError: Error, url: URL?) -> ResponseError {
-        
-        if case AFError.responseSerializationFailed = generalError {
-            return ResponseError(errorType: .notJSON(rawResponse: nil), url: url)
-        }
-
-        let nsError = generalError as NSError
-
-        guard nsError.domain == "NSURLErrorDomain" else {
-            return ResponseError(errorType: .unexpectedError(message: nil, error: nsError), url: url)
-        }
-
-        /// Convert nsError to ResponseError format
-        switch nsError.code {
-        case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
-            return ResponseError(errorType: .noNetworkConnection(nsError), url: url)
-        case NSURLErrorTimedOut:
-            return ResponseError(errorType: .connectionTimeout(nsError), url: url)
-        default:
-            return ResponseError(errorType: .unexpectedError(message: nil, error: nsError), url: url)
-        }
-    }
+	private init(errorType: ResponseErrorType) {
+		self.errorType = errorType
+	}
 
     private static let mapping:[Int:String] = [
         500: "Internal Server Error",
@@ -56,18 +32,84 @@ struct ResponseError: Error {
 
     var description: String {
         switch self.errorType {
-        case .noNetworkConnection:
-            return "ResponseError: No network connection"
-        case .httpError(let statusCode):
-            return "ResponseError: HTTP error: \(ResponseError.mapping[statusCode] ?? "Other"), Status code: \(statusCode)"
-        case .unexpectedError(let message, let error):
-            return "ResponseError: UnexpectedError message: \(message ?? ""), error \(error.debugDescription)"
-        case .parseJSONError(let decodingError):
-            return "ResponseError: JSON Decode error: \(decodingError)"
-        case .connectionTimeout(let error):
-            return "ResponseError: Connection timeout \(error.debugDescription)"
-        default:
-            return String(describing: self)
+        case .invalidUrl:
+            return "ResponseError: Invalid Url"
+        case .responseValidationFailed(let afError):
+			return "ResponseError: ResponseValidationFailed error: \(afError.localizedDescription)"
+        case .parameterEncodingFailed(let afError):
+			return "ResponseError: ParameterEncodingFailed error: \(afError.localizedDescription)"
+		case .multipartEncodingFailed(let afError):
+			return "ResponseError: MultipartEncodingFailed error: \(afError.localizedDescription)"
+		case .responseSerializationFailed(let afError):
+			return "ResponseError: ResponseSerializationFailed error: \(afError.localizedDescription)"
+        case .invalidStatusCode(let statusCode):
+            return "ResponseError: Invalid StatusCode error: \(ResponseError.mapping[statusCode] ?? "Other")"
+        case .urlError(let urlError):
+            return "ResponseError: URL error: \(urlError.localizedDescription)"
+		case .unknownError(let error):
+            return "ResponseError: Unknown error: \(error.localizedDescription)"
         }
     }
+}
+
+extension ResponseError.ResponseErrorType: Equatable{
+	public static func ==(lhs: ResponseError.ResponseErrorType, rhs: ResponseError.ResponseErrorType) -> Bool {
+		switch (lhs, rhs) {
+		case (.invalidUrl(let lhsAfError), .invalidUrl(let rhsAfError)):
+			return lhsAfError.isInvalidURLError == rhsAfError.isInvalidURLError
+		case (.responseValidationFailed(let lhsAfError), .responseValidationFailed(let rhsAfError)):
+			return lhsAfError.isResponseValidationError == rhsAfError.isResponseValidationError
+		case (.parameterEncodingFailed(let lhsAfError), .parameterEncodingFailed(let rhsAfError)):
+			return lhsAfError.isParameterEncodingError == rhsAfError.isParameterEncodingError
+		case (.multipartEncodingFailed(let lhsAfError), .multipartEncodingFailed(let rhsAfError)):
+			return lhsAfError.isMultipartEncodingError == rhsAfError.isMultipartEncodingError
+		case (.responseSerializationFailed(let lhsAfError), .responseSerializationFailed(let rhsAfError)):
+			return lhsAfError.isResponseSerializationError == rhsAfError.isResponseSerializationError
+		case (.invalidStatusCode(let lhsStatusCode), .invalidStatusCode(let rhsStatusCode)):
+			return lhsStatusCode == rhsStatusCode
+		case (.urlError(let lhsUrlError), .urlError(let rhsUrlError)):
+			return lhsUrlError.code == rhsUrlError.code
+		case (.unknownError(let lhsError), .unknownError(let rhsError)):
+			return lhsError.code == rhsError.code
+		default:
+			return false
+		}
+	}
+}
+
+
+private extension ResponseError {
+	static func handleAfErrorResponse(error: Error, url: URL?) -> ResponseError {
+
+		if let error = error as? AFError {
+			switch error {
+			case .invalidURL(_):
+				return ResponseError(errorType: .invalidUrl(error))
+			case .responseValidationFailed(let reason):
+				Logger.log(message: "Response Validation Failed for URL:\(url?.absoluteString ?? "") reason:\(reason)", event: .e)
+				switch reason {
+				case .unacceptableStatusCode(let code):
+					return ResponseError(errorType: .invalidStatusCode(code))
+				default:
+					break
+				}
+				return ResponseError(errorType: .responseValidationFailed(error))
+			case .parameterEncodingFailed(let reason):
+				Logger.log(message: "parameterEncodingFailed for URL:\(url?.absoluteString ?? "") reason:\(reason)", event: .e)
+				return ResponseError(errorType: .parameterEncodingFailed(error))
+			case .multipartEncodingFailed(let reason):
+				Logger.log(message: "multipartEncodingFailed for URL:\(url?.absoluteString ?? "") reason:\(reason)", event: .e)
+				return ResponseError(errorType: .multipartEncodingFailed(error))
+			case .responseSerializationFailed(let reason):
+				Logger.log(message: "responseSerializationFailed for URL:\(url?.absoluteString ?? "") reason:\(reason)", event: .e)
+				return ResponseError(errorType: .responseSerializationFailed(error))
+			}
+		} else if let error = error as? URLError {
+			return ResponseError(errorType: .urlError(error))
+		} else {
+			// unknown error
+			let nsError = error as NSError
+			return ResponseError(errorType: .unknownError(nsError))
+		}
+	}
 }
