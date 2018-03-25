@@ -11,7 +11,8 @@ struct ResponseError: Error {
 		case responseSerializationFailed(AFError)
 		case invalidStatusCode(Int)
 		case urlError(URLError)
-		case unknownError(NSError)
+		case unknownError(NSError?)
+		case responseStatusError
 	}
 
 	let errorType: ResponseErrorType
@@ -20,7 +21,7 @@ struct ResponseError: Error {
 		self = ResponseError.handleAfErrorResponse(error: error, url: url)
 	}
 
-	private init(errorType: ResponseErrorType) {
+	init(errorType: ResponseErrorType) {
 		self.errorType = errorType
 	}
 
@@ -46,7 +47,9 @@ struct ResponseError: Error {
         case .urlError(let urlError):
             return "ResponseError: URL error: \(urlError.localizedDescription)"
 		case .unknownError(let error):
-            return "ResponseError: Unknown error: \(error.localizedDescription)"
+            return "ResponseError: Unknown error: \(error?.localizedDescription ?? "")"
+		case .responseStatusError:
+			return "ResponseError: ResponseStatusError error"
         }
     }
 }
@@ -69,7 +72,9 @@ extension ResponseError.ResponseErrorType: Equatable{
 		case (.urlError(let lhsUrlError), .urlError(let rhsUrlError)):
 			return lhsUrlError.code == rhsUrlError.code
 		case (.unknownError(let lhsError), .unknownError(let rhsError)):
-			return lhsError.code == rhsError.code
+			return lhsError?.code == rhsError?.code
+		case (.responseStatusError, .responseStatusError):
+			return true
 		default:
 			return false
 		}
